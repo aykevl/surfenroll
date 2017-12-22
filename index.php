@@ -146,6 +146,10 @@ function handle_request() {
     } else if ($action === 'done') {
         $fullname_attribute = CREDENTIAL . '.' . IRMA_NAME_ATTRIBUTE;
         $jwt = get_verification_jwt($VERIFY_NAME_LABEL, [$fullname_attribute]);
+        if (PROVIDER == 'linkedin') {
+            // temporary hack to work around 48-character limit
+            $jwt = get_verification_jwt($VERIFY_NAME_LABEL, [$fullname_attribute, CREDENTIAL . '.profileurl']);
+        }
         require PAGE_DONE;
     } elseif ($saml_authenticator->isAuthenticated()) {
         $irma_attributes = map_saml_attributes($saml_authenticator->getAttributes());
