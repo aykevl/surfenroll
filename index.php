@@ -106,7 +106,7 @@ function get_issuance_jwt($irma_attributes) {
     return JWT::encode($iprequest, $pk, 'RS256', SERVER_NAME);
 }
 
-function get_verification_jwt($label, $attributes) {
+function get_verification_jwt($content) {
     $sprequest = [
         'sub' => 'verification_request',
         'iss' => 'Privacy by Design Foundation',
@@ -114,12 +114,7 @@ function get_verification_jwt($label, $attributes) {
         'sprequest' => [
             'validity' => 60,
             'request' => [
-                'content' => [
-                    [
-                        'label' => $label,
-                        'attributes' => $attributes,
-                    ],
-                ]
+                'content' => $content
             ]
         ]
     ];
@@ -145,10 +140,15 @@ function handle_request() {
         $saml_authenticator->logout();
     } else if ($action === 'done') {
         $fullname_attribute = CREDENTIAL . '.' . IRMA_NAME_ATTRIBUTE;
-        $jwt = get_verification_jwt($VERIFY_NAME_LABEL, [$fullname_attribute]);
+        $jwt = get_verification_jwt([
+            [ 'label' => $VERIFY_NAME_LABEL, 'attributes' => [$fullname_attribute]],
+        ]);
         if (PROVIDER == 'linkedin') {
             // temporary hack to work around 48-character limit
-            $jwt = get_verification_jwt($VERIFY_NAME_LABEL, [$fullname_attribute, CREDENTIAL . '.profileurl']);
+            $jwt = get_verification_jwt([
+                [ 'label' => $VERIFY_NAME_LABEL, 'attributes' => [$fullname_attribute]],
+                [ 'label' => "Profile URL", 'attributes' => [CREDENTIAL . '.profileurl']],
+            ]);
         }
         require PAGE_DONE;
     } elseif ($saml_authenticator->isAuthenticated()) {
